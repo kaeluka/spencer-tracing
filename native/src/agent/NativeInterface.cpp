@@ -27,6 +27,7 @@ int capnproto_fd;
 #define SOCKET_PORT "1345"
 
 std::string getTracefileName() {
+  /*
     std::shared_ptr<FILE> pipe(popen("./getBenchmarkDrive.sh", "r"), pclose);
     if (!pipe) return "ERROR";
     char buffer[128];
@@ -38,6 +39,8 @@ std::string getTracefileName() {
     }
     result.erase(std::remove(result.begin(), result.end(), '\n'), result.end());
     return result+"/prototracefile.log";
+  */
+  return "/tmp/tracefile";
 }
 
 std::string tracefilename = getTracefileName();
@@ -1081,7 +1084,7 @@ void parse_options(std::string options) {
       tracefilename = rest;
     }
   }
-  //std::cout << "dumping output to file " << tracefilename << std::endl;
+  std::cout << "dumping output to file " << tracefilename << std::endl;
 }
 
 /*
@@ -1171,8 +1174,10 @@ JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
   DBG("extending bootstrap classloader search");
   error = g_jvmti->AddToBootstrapClassLoaderSearch("./");
   ASSERT_NO_JVMTI_ERR(g_jvmti, error); // make NativeInterface.class visible
+  error = g_jvmti->AddToBootstrapClassLoaderSearch("/Users/stebr742/.m2/repository/com/github/kaeluka/spencer-tracing-jni/0.1.2-SNAPSHOT/");
+  ASSERT_NO_JVMTI_ERR(g_jvmti, error); // make NativeInterface.class visible
+
   DBG("extending bootstrap classloader search: done");
-  //ASSERT_NO_JVMTI_ERR(g_jvmti, g_jvmti->AddToBootstrapClassLoaderSearch("/Users/stebr742/code/kaeluka/java-alias-agent/agent/lib/NativeInterface.so"));
   return JNI_OK;
 }
 

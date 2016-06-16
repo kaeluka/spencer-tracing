@@ -19,7 +19,7 @@ ifeq ($(UNAME),Darwin)
 endif
 
 all: lib/NativeInterface.so NativeInterface.class
-	javac -d . test/*.java
+	#javac -d . test/*.java
 
 NativeInterface.class: NativeInterface.java
 	javac NativeInterface.java
