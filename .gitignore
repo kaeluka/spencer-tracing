@@ -43,3 +43,6 @@
 *.svg
 *.gz
 tracefiles/*
+
+# Maven build
+java/target

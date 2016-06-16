@@ -6,7 +6,7 @@
 
     <groupId>com.github.kaeluka</groupId>
     <artifactId>spencer-tracing</artifactId>
-    <version>0.1.1-SNAPSHOT</version>
+    <version>0.1.2-SNAPSHOT</version>
     <packaging>pom</packaging>
     <url>https://github.com/kaeluka/spencer-tracing</url>
     <licenses>
