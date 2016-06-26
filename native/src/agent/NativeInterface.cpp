@@ -84,25 +84,19 @@ string kindToStr(jint v) {
 
 static jrawMonitorID g_lock;
 
-void doFramePop(jstring mname) {
-  DBG("doFramePop");
+void doFramePop(std::string mname) {
   std::string threadName = getThreadName(g_jvmti, g_lock);//getOrDoTag(NativeInterface_SPECIAL_VAL_NORMAL, thread,
-
   capnp::MallocMessageBuilder outermessage;
   AnyEvt::Builder anybuilder = outermessage.initRoot<AnyEvt>();
   capnp::MallocMessageBuilder innermessage;
   MethodExitEvt::Builder msgbuilder = innermessage.initRoot<MethodExitEvt>();
                    //           "java/lang/Thread", thread, g_jvmti, g_lock);
   msgbuilder.setThreadName(threadName);
-  const auto runningFunction = getRunningFunction(threadName);
-  if (runningFunction == "jvmInternals") {
-    return;
-  }
-  msgbuilder.setName(runningFunction);
+  msgbuilder.setName(mname);
   ASSERT(std::string("") != msgbuilder.getName().cStr());
   anybuilder.setMethodexit(msgbuilder.asReader());
 
-  popStackFrame(threadName);
+  //temporary  popStackFrame(threadName);
 
   capnp::writeMessageToFd(capnproto_fd, outermessage);
 }
@@ -359,15 +353,15 @@ Java_NativeInterface_methodExit(JNIEnv *env, jclass, jstring _mname, jstring _cn
   LOCK;
   const auto mname = toStdString(env, _mname);
   const auto cname = toStdString(env, _cname);
-  if (! isClassInstrumented(cname)) {
-    DODBG("NOT POPPING FRAME DUE TO CLASS "<<cname<<" BEING UNINSTRUMENTED");
-    return;
-  }
+  //temporary  if (! isClassInstrumented(cname)) {
+  //temporary    DODBG("NOT POPPING FRAME DUE TO CLASS "<<cname<<" BEING UNINSTRUMENTED");
+  //temporary    return;
+  //temporary  }
   ASSERT(mname != "");
   DBG("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv");
   DBG("Java_NativeInterface_methodExit:  ...::"<<mname<<"), thd: "<<getThreadName(g_jvmti, g_lock));
   ASSERT(mname != "ClassRep");
-  doFramePop(_mname);
+  doFramePop(mname);
   DBG("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
 
 #endif
@@ -426,7 +420,7 @@ Java_NativeInterface_methodEnter(JNIEnv *env, jclass nativeinterfacecls,
             env, nativeinterfacecls, initName, init_sig, string_class_name,
             NativeInterface_SPECIAL_VAL_NORMAL, arg, init_args);
         ASSERT_EQ(toStdString(env, initName), "<init>");
-        doFramePop(initName);
+        doFramePop(toStdString(env, initName));
 
         //env->ReleaseObjectArrayElements(init_args);
       }
@@ -458,8 +452,9 @@ Java_NativeInterface_methodEnter(JNIEnv *env, jclass nativeinterfacecls,
     if (toStdString(env, calleeClass).c_str()[0] == '[') {
       // it's an array, which means that this ctor is fake and we need to simulate the frame pop!
       jstring initName = env->NewStringUTF("<init>");
-      ASSERT_EQ(toStdString(env, initName), "<init>");
-      doFramePop(initName);
+      auto initNameStr = toStdString(env, initName);
+      ASSERT_EQ(initNameStr, "<init>");
+      doFramePop(initNameStr);
       // we do NOT call afterInitMethod, since the instrumenter emits this event.
       // afterInitMethod needs the actual reference to the array, we only have SPECIAL_VAL_THIS/0x0
     }
@@ -515,10 +510,10 @@ Java_NativeInterface_afterInitMethod(JNIEnv *env, jclass native_interface,
   std::string calleeClassStr = toStdString(env, calleeClass);
   std::string threadName = getThreadName(g_jvmti, g_lock);
   const auto &runningClass = getRunningClass(threadName);
-  if (!isClassInstrumented(runningClass) && runningClass!="JvmInternals") {
-    ERR("class "<<runningClass<<" was instrumented for java, but not for native code!");
-    return;
-  }
+  //  if (!isClassInstrumented(runningClass) && runningClass!="JvmInternals") {
+  //    ERR("class "<<runningClass<<" was instrumented for java, but not for native code!");
+  //    return;
+  //  }
   DBG("afterInitMethod(..., callee="<<callee<<", calleeClass=" << calleeClass << ")");
 
   if (calleeClassStr == "ClassRep" || isClassInstrumented(calleeClassStr)) {
@@ -1189,21 +1184,19 @@ JNIEXPORT void JNICALL Agent_OnUnload(JavaVM *vm) {
   //DODBG("Agent_OnUnload");
 #ifdef ENABLED
   {
-    int cnt = 0;
-    for (auto it = instrumentedClasses.begin(); it != instrumentedClasses.end();
-         ++it) {
-//      DBG("instrumented " << ++cnt << "/" << instrumentedClasses.size()
-//                          << ": class " << *it);
-    }
-  }
-  {
-    int cnt = 0;
-    for (auto it = uninstrumentedClasses.begin();
-         it != uninstrumentedClasses.end(); ++it) {
-    //  DODBG("uninstrumented "<<++cnt<<"/"<<uninstrumentedClasses.size()
-    //                         <<": class "<<*it);
-    }
-    DODBG("instrumented "<<instrumentedClasses.size()<<" classes, skipped "<<uninstrumentedClasses.size());
+    //  int cnt = 0;
+    //  for (auto it = instrumentedClasses.begin(); it != instrumentedClasses.end();
+    //       ++it) {
+    //    DBG("instrumented " << ++cnt << "/" << instrumentedClasses.size()
+    //                        << ": class " << *it);
+    //  }
+    //  int cnt = 0;
+    //  for (auto it = uninstrumentedClasses.begin();
+    //       it != uninstrumentedClasses.end(); ++it) {
+    //     DODBG("uninstrumented "<<++cnt<<"/"<<uninstrumentedClasses.size()
+    //                       <<": class "<<*it);
+    //  }
+    //DODBG("instrumented "<<instrumentedClasses.size()<<" classes, skipped "<<uninstrumentedClasses.size());
   }
 #endif // ifdef ENABLED
 }

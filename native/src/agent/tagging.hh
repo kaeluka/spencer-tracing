@@ -166,37 +166,37 @@ std::string getThreadName(jvmtiEnv* g_jvmti, jrawMonitorID g_lock) {
 void pushStackFrame(JNIEnv *env, const std::string &thread, jint callee_kind,
                     jobject callee, jstring mname, jstring cname,
                     jvmtiEnv *g_jvmti, jrawMonitorID g_lock) {
-  DBG("pushing stack frame");
-
-  std::string threadName = getThreadName(g_jvmti, g_lock);
-
-  jlong calleeTag;
-  if (callee_kind == NativeInterface_SPECIAL_VAL_THIS) {
-    // create a new object ID and push it to the stack.
-    // handleValStatic will then use this ID whenever it sees a
-    // SPECIAL_VAL_THIS!
-
-    ASSERT_MSG(!freshObjectIDs[threadName].empty(),
-               "have no object ID for SPECIAL_VAL_THIS (method "<<toStdString(env, mname)
-               <<", class "<<toStdString(env,cname)<<")");
-    calleeTag = freshObjectIDs[threadName].top();
-    DBG("thread " << threadName << ": generating tag " << calleeTag
-                  << " for SPECIAL_VAL_THIS::"<<toStdString(env,cname));
-    //freshObjectIDs[threadName].push(calleeTag);
-  } else {
-    //handleValStatic(env, &callee_kind, &callee, cname);
-    calleeTag = getOrDoTag(callee_kind, callee, toStdString(env, cname),
-                            threadName, g_jvmti, g_lock);
-  }
-  std::string mnameStr = toStdString(env, mname);
-  std::string cnameStr = toStdString(env, cname);
-  ASSERT(mnameStr != "java/security/BasicPermission");
-  getThreadStack(threadName)
-      .pushFrame(mnameStr, cnameStr, calleeTag);
-  ASSERT(getThreadStack(threadName).hasFrames() > 0);
-  ASSERT(getThreadStack(threadName).peekFrame().getMethodName() != "");
-  DBG("pushing stack frame done");
-  printCurrentStack(threadName);
+  //temporary  DBG("pushing stack frame");
+  //temporary
+  //temporary  std::string threadName = getThreadName(g_jvmti, g_lock);
+  //temporary
+  //temporary  jlong calleeTag;
+  //temporary  if (callee_kind == NativeInterface_SPECIAL_VAL_THIS) {
+  //temporary    // create a new object ID and push it to the stack.
+  //temporary    // handleValStatic will then use this ID whenever it sees a
+  //temporary    // SPECIAL_VAL_THIS!
+  //temporary
+  //temporary    ASSERT_MSG(!freshObjectIDs[threadName].empty(),
+  //temporary               "have no object ID for SPECIAL_VAL_THIS (method "<<toStdString(env, mname)
+  //temporary               <<", class "<<toStdString(env,cname)<<")");
+  //temporary    calleeTag = freshObjectIDs[threadName].top();
+  //temporary    DBG("thread " << threadName << ": generating tag " << calleeTag
+  //temporary                  << " for SPECIAL_VAL_THIS::"<<toStdString(env,cname));
+  //temporary    //freshObjectIDs[threadName].push(calleeTag);
+  //temporary  } else {
+  //temporary    //handleValStatic(env, &callee_kind, &callee, cname);
+  //temporary    calleeTag = getOrDoTag(callee_kind, callee, toStdString(env, cname),
+  //temporary                            threadName, g_jvmti, g_lock);
+  //temporary  }
+  //temporary  std::string mnameStr = toStdString(env, mname);
+  //temporary  std::string cnameStr = toStdString(env, cname);
+  //temporary  ASSERT(mnameStr != "java/security/BasicPermission");
+  //temporary  getThreadStack(threadName)
+  //temporary      .pushFrame(mnameStr, cnameStr, calleeTag);
+  //temporary  ASSERT(getThreadStack(threadName).hasFrames() > 0);
+  //temporary  ASSERT(getThreadStack(threadName).peekFrame().getMethodName() != "");
+  //temporary  DBG("pushing stack frame done");
+  //temporary  printCurrentStack(threadName);
 }
 
 long getTag(jint objkind, jobject jobj, std::string klass, const std::string &threadName,
@@ -230,44 +230,46 @@ bool tagFreshlyInitialisedObject(jvmtiEnv *g_jvmti, jobject callee,
   // DBG("set tag " << tag << " on " << jobj);
 }
 
-void popStackFrame(const std::string &threadName) {
-  //if (getThreadStack(threadName).hasFrames() == 0) {
-  //  WARN("trying to pop from empty stack model for thread" << threadName);
-  //} else {
-  if (getThreadStack(threadName).hasFrames() <= 0) {
-    ERR("popping frame from empty stack");
-    return;
-  }
-  const auto &oldTop = getThreadStack(threadName).peekFrame();
-  if (oldTop.getClassName() != "JvmInternals" && oldTop.getMethodName() != "jvmInternals") {
-    getThreadStack(threadName).popFrame();
-    DBG("popped frame ["<<oldTop.getThisId()<<"@"<<oldTop.getClassName()<<"::"<<oldTop.getMethodName()<<"]");
-  } else {
-    ERR("did not pop frame of magic method JvmInternals::jvmInternals");
-  }
-  //}
-  printCurrentStack(threadName);
-}
+//temporaryvoid popStackFrame(const std::string &threadName) {
+  //temporary  //if (getThreadStack(threadName).hasFrames() == 0) {
+  //temporary  //  WARN("trying to pop from empty stack model for thread" << threadName);
+  //temporary  //} else {
+  //temporary  if (getThreadStack(threadName).hasFrames() <= 0) {
+  //temporary    ERR("popping frame from empty stack");
+  //temporary    return;
+  //temporary  }
+  //temporary  const auto &oldTop = getThreadStack(threadName).peekFrame();
+  //temporary  if (oldTop.getClassName() != "JvmInternals" && oldTop.getMethodName() != "jvmInternals") {
+  //temporary    getThreadStack(threadName).popFrame();
+  //temporary    DBG("popped frame ["<<oldTop.getThisId()<<"@"<<oldTop.getClassName()<<"::"<<oldTop.getMethodName()<<"]");
+  //temporary  } else {
+  //temporary    ERR("did not pop frame of magic method JvmInternals::jvmInternals");
+  //temporary  }
+  //temporary  //}
+  //temporary  printCurrentStack(threadName);
+//temporary}
 
-const frame getRunningFrame(const std::string &threadName) {
-  if (getThreadStack(threadName).hasFrames() <= 0) {
-    ERR("getting from from empty stack");
-    frame f("unregistered method", "unregistered class", NativeInterface_SPECIAL_VAL_NOT_IMPLEMENTED);
-    return f;
-  }
-  return getThreadStack(threadName).peekFrame();
-}
+//temporaryconst frame getRunningFrame(const std::string &threadName) {
+//temporary  if (getThreadStack(threadName).hasFrames() <= 0) {
+//temporary    ERR("getting from from empty stack");
+//temporary    frame f("unregistered method", "unregistered class", NativeInterface_SPECIAL_VAL_NOT_IMPLEMENTED);
+//temporary    return f;
+//temporary  }
+//temporary  return getThreadStack(threadName).peekFrame();
+//temporary}
 
-std::string getRunningFunction(const std::string &threadName) {
-  auto ret = getRunningFrame(threadName);
-  ASSERT(ret.getMethodName() != "");
-  ASSERT(ret.getClassName() != "");
-  return ret.getMethodName();
-}
+//temporarystd::string getRunningFunction(const std::string &threadName) {
+//temporary  auto ret = getRunningFrame(threadName);
+//temporary  ASSERT(ret.getMethodName() != "");
+//temporary  ASSERT(ret.getClassName() != "");
+//temporary  return ret.getMethodName();
+//temporary  return "TODO:instrument exited method name";
+//temporary}
 
-long getRunningObject(const std::string &threadName) { return getRunningFrame(threadName).getThisId(); }
+//temporarylong getRunningObject(const std::string &threadName) { return getRunningFrame(threadName).getThisId(); }
 
-const std::string getRunningClass(const std::string &threadName) { return getRunningFrame(threadName).getClassName(); }
+//temporaryconst std::string getRunningClass(const std::string &threadName) { return getRunningFrame(threadName).getClassName(); }
+const std::string getRunningClass(const std::string &threadName) { return "TODO:instrument running class"; }
 
 /**
   Tag an object with a fresh ID.
