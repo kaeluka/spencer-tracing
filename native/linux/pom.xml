@@ -8,7 +8,6 @@
     </parent>
 
     <artifactId>spencer-tracing-jni</artifactId>
-    <version>0.1.2-SNAPSHOT</version>
     <name>JNI Module</name>
 
     <packaging>so</packaging>
